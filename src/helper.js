@@ -272,6 +272,20 @@ const resolveDefaultUsagePlan = provider => {
 }
 
 /**
+ * Get api keys
+ * @param {Array} apiKeysForStages api keys array
+ * @param {string} stage api gateway stage
+ * @returns 
+ */
+const getApiKeys = (apiKeysForStages, stage) => {
+  const _apiKeysForStages = apiKeysForStages || [];
+  const apiKeysForStage  = _apiKeysForStages[stage] || [];
+  const apiKeys = Array.isArray(_apiKeysForStages) ? _apiKeysForStages : apiKeysForStage;
+
+  return apiKeys;
+}
+
+/**
  * Main function that adds api key.
  * @param {Object} serverless Serverless object
  */
@@ -281,9 +295,8 @@ const addApiKey = async (serverless, options) => {
   const region = provider.getRegion();
   const stage = provider.getStage();
   const conceal = options.conceal;
-  const apiKeysForStages = serverless.service.custom.apiKeys || [];
-  const apiKeysForStage  = apiKeysForStages[stage] || [];
-  const apiKeys = Array.isArray(apiKeysForStages) ? apiKeysForStages : apiKeysForStage;
+  const apiKeysForStages = serverless.service.custom.apiKeys;
+  const apiKeys = getApiKeys(apiKeysForStages, stage)
   const serviceName = serverless.service.getServiceName();
   const stackName = serverless.service.provider.stackName || `${serviceName}-${stage}`;
   const results = [];
@@ -301,7 +314,6 @@ const addApiKey = async (serverless, options) => {
 
   if (!apiKeys || !apiKeys.length) {
     serverless.cli.consoleLog(`AddApiKey: ${chalk.yellow(`No ApiKey names specified for stage ${stage} so skipping creation`)}`);
-    return;
   }
 
   let planName;
@@ -392,8 +404,8 @@ const removeApiKey = async (serverless) => {
   const awsCredentials = provider.getCredentials();
   const region = provider.getRegion();
   const stage = provider.getStage();
-  const apiKeysForStages = serverless.service.custom.apiKeys || [];
-  const apiKeys = Array.isArray(apiKeysForStages) ? apiKeysForStages : apiKeysForStages[stage];
+  const apiKeysForStages = serverless.service.custom.apiKeys;
+  const apiKeys = getApiKeys(apiKeysForStages, stage);
   const ag = new AWS.APIGateway({
     credentials: awsCredentials.credentials,
     region,
